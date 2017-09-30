@@ -1,21 +1,19 @@
 package lll.com.cardstackviewpager;
 
 import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
+import android.util.Log;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.InputStream;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private ViewPager mViewPager;
-    private ArrayList<CardBean> dataList;
+    private ArrayList<String> dataList;
     private CardStackAdapter mAdapter;
+    private ViewPager.SimpleOnPageChangeListener mListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,9 +23,42 @@ public class MainActivity extends AppCompatActivity {
         mViewPager = (ViewPager) findViewById(R.id.viewPager);
         mAdapter = new CardStackAdapter(getSupportFragmentManager());
         mViewPager.setAdapter(mAdapter);
-        mViewPager.setPageTransformer(true, new CardStackPageTransformer());
+        mListener = new ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(int position) {
+                Log.d("onPageSelected", "position " + position);
+                for (int i = 0; i < mViewPager.getOffscreenPageLimit() + 1; i++) {
+                    if (position + i >= mAdapter.getCount()) return;
+                    CardStackAdapter.CardFragment item = (CardStackAdapter.CardFragment) mAdapter.instantiateItem(mViewPager, position + i);
+                    if (item == null) return;
+                    FragmentTransaction fragmentTransaction = item.getFragmentManager().beginTransaction();
+
+                    //将第 4 页隐藏
+                    if (i == mViewPager.getOffscreenPageLimit()) {
+                        fragmentTransaction.hide(item).commit();
+                    } else {
+                        fragmentTransaction.show(item).commit();
+                    }
+
+                    //将除第一页和第二页外的都显示成灰色的
+                    if (i == 0) {
+                        item.showActView();
+                    } else {
+                        item.showGrayView();
+                    }
+                }
+            }
+        };
+        mViewPager.addOnPageChangeListener(mListener);
         mViewPager.setOffscreenPageLimit(3);
         mAdapter.setData(dataList);
+        mViewPager.post(new Runnable() {
+            @Override
+            public void run() {
+                mListener.onPageSelected(0);
+            }
+        });
+
     }
 
     /**
@@ -35,61 +66,24 @@ public class MainActivity extends AppCompatActivity {
      */
     private void initDataList() {
         dataList = new ArrayList<>();
-        try {
-            InputStream in = getAssets().open("preset.json");
-            int size = in.available();
-            byte[] buffer = new byte[size];
-            in.read(buffer);
-            String jsonStr = new String(buffer, "UTF-8");
-            JSONObject jsonObject = new JSONObject(jsonStr);
-            JSONArray jsonArray = jsonObject.optJSONArray("result");
-            if (null != jsonArray) {
-                int len = jsonArray.length();
-                for (int j = 0; j < 3; j++) {
-                    for (int i = 0; i < len; i++) {
-                        JSONObject itemJsonObject = jsonArray.getJSONObject(i);
-                        CardBean itemEntity = new CardBean(itemJsonObject);
-                        dataList.add(itemEntity);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private class CardStackPageTransformer implements ViewPager.PageTransformer {
-        private float mScaleOffset = 100;
-
-        /**
-         * @param page     view
-         * @param position 0是当前页。1是右边的一个整页位置，而-1是左边的一页位置。（-1也可能是当前页）
-         */
-        public void transformPage(View page, float position) {
-            if (position <= 0.0) {
-                page.setAlpha(1);
-                page.setTranslationX((page.getWidth() / 3 * position));
-            } else {
-                //　设置缩放　，　使显示为层叠效果
-                float scale = (page.getWidth() - mScaleOffset * position) / (float) (page.getWidth());
-                page.setScaleX(scale);
-                page.setScaleY(scale);
-
-                //　设置重叠摆放
-                page.setTranslationX((-page.getWidth() * position) + (mScaleOffset * 0.8f) * position);
-
-                //　setAlpha
-                double percent = 0.25 * (float) (Math.floor(position + 1) - position);
-                if (position > 0.0 && position < 1.0) {            //1.0  - 0.7  || 0.7  - 1.0
-                    page.setAlpha((float) (percent + 0.75));
-                } else if (position > 1.0 && position < 2.0) {     //0.7  - 0.5  || 0.5  - 0.7
-                    page.setAlpha((float) (percent + 0.50));
-                } else if (position > 2.0 && position < 3.0) {     //0.5  - 0.25 || 0.25 - 0.5
-                    page.setAlpha((float) (percent + 0.25));
-                } else if (position >= 3.0 && position < 4.0) {     //0.25 - 0　　 || 0    - 0.25
-                    page.setAlpha((float) (percent));
-                }
-            }
-        }
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/33/200201222405_3323351_ios_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/33/200500902650_3323329_ios_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/33/200201226238_3323319_ios_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/27/200462583649_3322706_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/26/200501002356_3322680_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/26/200500997801_3322667_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/25/200201242345_3322557_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/23/200201219395_3322378_ios_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/23/200500893477_3322317_ios_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/21/200500910964_3322191_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/20/100200900374_3322071_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/17/500500888587_3321725_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/15/200500980931_3321532_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/14/200200906421_3321498_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/12/200500991546_3321292_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/13/200201214576_3321302_640.jpg");
+        dataList.add("http://piccdn.xingyun.cn/media/users/xingyu/332/10/100200896458_3321013_640.jpg");
+        dataList.add("");
+        dataList.add("");
     }
 }

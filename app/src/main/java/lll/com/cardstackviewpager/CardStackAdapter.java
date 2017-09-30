@@ -1,15 +1,16 @@
 package lll.com.cardstackviewpager;
 
+import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
@@ -18,7 +19,7 @@ import java.util.ArrayList;
 
 class CardStackAdapter extends FragmentStatePagerAdapter {
 
-    private final ArrayList<CardBean> mData;
+    private final ArrayList<String> mData;
 
     CardStackAdapter(FragmentManager fm) {
         super(fm);
@@ -26,8 +27,8 @@ class CardStackAdapter extends FragmentStatePagerAdapter {
     }
 
     @Override
-    public Fragment getItem(int position) {
-        return CardFragment.newInstance(mData.get(position),position);
+    public CardFragment getItem(int position) {
+        return CardFragment.newInstance(mData.get(position), position);
     }
 
 
@@ -36,27 +37,21 @@ class CardStackAdapter extends FragmentStatePagerAdapter {
         return mData.size();
     }
 
-    public void setData(ArrayList<CardBean> bean) {
+    public void setData(ArrayList<String> bean) {
         mData.clear();
         if (bean != null) mData.addAll(bean);
         notifyDataSetChanged();
     }
 
-    @Override
-    public int getItemPosition(Object object) {
-        return super.getItemPosition(object);
-    }
 
     public static class CardFragment extends Fragment {
 
         private ImageView ivImage;
-        private TextView tvText;
 
-        public static CardFragment newInstance(CardBean bean,int position) {
+        public static CardFragment newInstance(String url, int position) {
             CardFragment cardFragment = new CardFragment();
             Bundle args = new Bundle();
-            args.putString("url", bean.getCoverImageUrl());
-            args.putString("time", bean.getTime());
+            args.putString("url", url);
             args.putInt("position", position);
             cardFragment.setArguments(args);
             return cardFragment;
@@ -65,21 +60,30 @@ class CardStackAdapter extends FragmentStatePagerAdapter {
         @Nullable
         @Override
         public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            Log.d("CardFragment", "onCreateView : " + getArguments().getInt("position"));
             return inflater.inflate(R.layout.stack_card_item, container, false);
         }
 
         @Override
         public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
             super.onViewCreated(view, savedInstanceState);
+            Log.d("CardFragment", "onViewCreated : " + getArguments().getInt("position"));
             ivImage = view.findViewById(R.id.ivImage);
-            tvText = view.findViewById(R.id.tvText);
-            tvText.setText(String.valueOf(getArguments().getInt("position")));
-            Glide.with(getContext()).load(getArguments().getString("url")).into(ivImage);
+            Glide.with(getContext()).load(getArguments().getString("url")).error(R.mipmap.act_background).into(ivImage);
         }
 
-        public int dip2px(float dpValue) {
-            final float scale = getContext().getResources().getDisplayMetrics().density;
-            return (int) (dpValue * scale + 0.5f);
+        public void showGrayView() {
+            Log.d("CardFragment", "showGrayView :" + getArguments().getInt("position"));
+            if (ivImage != null) {
+                Glide.with(getContext()).load(R.mipmap.act_background).into(ivImage);
+            }
+        }
+
+        public void showActView() {
+            Log.d("CardFragment", "showActView :" + getArguments().getInt("position"));
+            if (ivImage != null) {
+                Glide.with(getContext()).load(getArguments().getString("url")).error(R.mipmap.act_background).into(ivImage);
+            }
         }
     }
 
